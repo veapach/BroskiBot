@@ -1,6 +1,7 @@
-TOKEN бота и URL на БД вставлять в файл(если его нет, то создать в корневой папке) .env
+1. Перед запуском вписать в консоль - pip install -r requirements.txt
+2. TOKEN бота и URL на БД вставлять в файл(если его нет, то создать в корневой папке) .env
 
-пример:
+   пример:
 
-TOKEN = tokenblablabla
-SQL_URL = urltosqlite
+   TOKEN = tokenblablabla
+   SQL_URL = urltosqlite
