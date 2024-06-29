@@ -1,70 +1,88 @@
-from LxmlSoup import LxmlSoup as ls
-import requests
+import aiohttp
 import random
+import asyncio
+from bs4 import BeautifulSoup as bs
 
-
-must_nickname = '' 
+# Глобальные переменные для хранения данных пользователя и рейтинга
+must_nickname = ''
 rating = ''
 serials = []
 movies = []
 urls = []
 urls_movies = []
-serials_with_urls = []
-moves_with_urls = []
-chosen_serial = ''
-chosen_serial_url = ''
-chosen_movie = ''
-chosen_movie_url = ''
 
-def must_rating():
-    html = requests.get(f'https://mustapp.com/@{must_nickname}/want').text
-    soup = ls(html)
+# Асинхронная функция для загрузки страницы
+async def fetch_page(session, url):
+    async with session.get(url) as response:
+        return await response.text()
 
-    item_rating = soup.find_all('div', class_='profile__meta_item m_laurels')
-    for i in enumerate(item_rating):
-        global rating 
-        rating = soup.find_all('div', class_='profile__meta_value')[0].text()
-    
+# Асинхронная функция для получения рейтинга Must
+async def must_rating():
+    async with aiohttp.ClientSession() as session:
+        page_content = await fetch_page(session, f'https://mustapp.com/@{must_nickname}/want')
+        soup = bs(page_content, 'html.parser')
+        item_rating = soup.find_all('div', class_='profile__meta_item m_laurels')
+        if item_rating:
+            global rating 
+            rating = item_rating[0].find('div', class_='profile__meta_value').text.strip()
+    return rating
 
+# Асинхронная функция для получения списка сериалов
+async def get_serials():
+    async with aiohttp.ClientSession() as session:
+        page_content = await fetch_page(session, f'https://mustapp.com/@{must_nickname}/want')
+        soup = bs(page_content, 'html.parser')
 
-def random_project():
-    html = requests.get(f'https://mustapp.com/@{must_nickname}/want').text
-    soup = ls(html)
+        links = soup.find_all('a', class_='poster js_item')
+        tasks = [fetch_page(session, f'https://mustapp.com{link["href"]}') for link in links]
 
-    links = soup.find_all('a', class_='poster js_item')
+        pages_content = await asyncio.gather(*tasks)
 
-    for i, link in enumerate(links):
-        url = link.get('href')
-        html_shows = requests.get(f'https://mustapp.com/{url}').text
-        shows = ls(html_shows)
-        check_serial = shows.find_all('div', class_='productShow')
-        if not check_serial:
-            movie_name = soup.find_all('div', class_='poster__title')[i].text()
-            movies.append(movie_name)
-            urls_movies.append(url)
-        else:
-            name = soup.find_all('div', class_='poster__title')[i].text()
-            serials.append(name)
-            urls.append(url)
-    
+        serials_list = []
+        for i, page in enumerate(pages_content):
+            show_soup = bs(page, 'html.parser')
+            if show_soup.find('div', class_='productShow'):
+                name = soup.find_all('div', class_='poster__title')[i].text.strip()
+                url = links[i]['href']
+                serials_list.append((name, url))
+                serials.append(name)
+                urls.append(url)
+        return serials_list
 
-    
-    global chosen_serial
-    global chosen_serial_url
+# Асинхронная функция для получения списка фильмов
+async def get_movies():
+    async with aiohttp.ClientSession() as session:
+        page_content = await fetch_page(session, f'https://mustapp.com/@{must_nickname}/want')
+        soup = bs(page_content, 'html.parser')
+
+        links = soup.find_all('a', class_='poster js_item')
+        tasks = [fetch_page(session, f'https://mustapp.com{link["href"]}') for link in links]
+
+        pages_content = await asyncio.gather(*tasks)
+
+        movies_list = []
+        for i, page in enumerate(pages_content):
+            show_soup = bs(page, 'html.parser')
+            if not show_soup.find('div', class_='productShow'):
+                name = soup.find_all('div', class_='poster__title')[i].text.strip()
+                url = links[i]['href']
+                movies_list.append((name, url))
+                movies.append(name)
+                urls_movies.append(url)
+        return movies_list
+
+# Асинхронная функция для получения случайного сериала
+async def get_random_serial():
+    if not serials:
+        await get_serials()
     chosen_serial = random.choice(serials)
-    chosen_serial_number = serials.index(chosen_serial)
-    chosen_serial_url = 'https://mustapp.com' + urls[chosen_serial_number]
-    
-    global chosen_movie
-    global chosen_movie_url
-    chosen_movie = random.choice(movies)
-    chosen_movie_number = movies.index(chosen_movie)
-    chosen_movie_url = 'https://mustapp.com' + urls_movies[chosen_movie_number]
-    
-    
+    chosen_serial_url = urls[serials.index(chosen_serial)]
+    return chosen_serial, f'https://mustapp.com{chosen_serial_url}'
 
-def clear_projects():
-    movies.clear()
-    serials.clear()
-    urls.clear()
-    urls_movies.clear()
+# Асинхронная функция для получения случайного фильма
+async def get_random_movie():
+    if not movies:
+        await get_movies()
+    chosen_movie = random.choice(movies)
+    chosen_movie_url = urls_movies[movies.index(chosen_movie)]
+    return chosen_movie, f'https://mustapp.com{chosen_movie_url}'
