@@ -17,7 +17,7 @@ random_chosed = False
 executor = ThreadPoolExecutor()
 
 animation_texts = [
-        '⏳ Еще выбираем... ⏳',
+        '⏳ Еще выгружаем... ⏳',
         '⏳ Осталось чуть-чуть.... ⏳',
         '⏳ Совсем скоро.... ⏳',
         '⏳ Уже вот-вот.... ⏳',
@@ -77,29 +77,7 @@ async def nice(message: Message):
 @router.message(F.text == 'Сериалы')
 async def serials(message: Message):
     await rq.check_user(message.from_user.id)
-    await message.answer('Тут будет список сериалов', reply_markup=kb.serials_menu)
-
-@router.message(F.text == 'Фильмы')
-async def movies(message: Message):
-    await rq.check_user(message.from_user.id)
-    await message.answer('Тут будет список фильмов', reply_markup=kb.movies_menu)
- 
-@router.callback_query(F.data == 'serials')
-async def randomSerial(callback: CallbackQuery):
-    await callback.answer('Назад к сериалам')
-    await callback.message.edit_text('Тут будет список сериалов', reply_markup=kb.serials_menu)
-
-@router.callback_query(F.data == 'movies')
-async def randomSerial(callback: CallbackQuery):
-    await callback.answer('Назад к сериалам')
-    await callback.message.edit_text('Тут будет список сериалов', reply_markup=kb.movies_menu)
-
-    
-@router.callback_query(F.data == 'random_serial')
-async def randomSerial(callback: CallbackQuery):
-    await callback.answer('Выбор случайного сериала')
-    await rq.check_user(callback.from_user.id)  
-    waiting_msg = await callback.message.edit_text('⏳ Выбираем <b>сериал</b>, это может занять некоторое время ⏳', parse_mode="html")
+    waiting_msg = await message.answer('⏳ Выгружаем список <b>сериалов</b>, это может занять некоторое время ⏳', parse_mode="html")
     
     loop = asyncio.get_event_loop()
     task = loop.run_in_executor(executor, mp.random_project)
@@ -112,14 +90,20 @@ async def randomSerial(callback: CallbackQuery):
                 break
     
     await task
-    await callback.message.edit_text(f'🎲 Выпал сериал - <b>{mp.chosen_serial}</b>\n Ссылка - {mp.chosen_serial_url}',
-                        reply_markup=kb.random_serial_menu, parse_mode="html")
+    serials_list = []
+    for serial_with_url in zip(mp.serials, mp.urls):
+        element = f'➜ {str(serial_with_url[0])} - '
+        element += f'https://mustapp.com{str(serial_with_url[1])}'
+        serials_list.append(element)
+    await waiting_msg.edit_text(f'<b>Список запланированных сериалов:\n\n</b>{'\n'.join(serials_list)}', 
+                            reply_markup=kb.serials_menu, parse_mode="html", disable_web_page_preview=True)
+    
+    mp.clear_projects()
 
-@router.callback_query(F.data == 'random_movie')
-async def randomMovie(callback: CallbackQuery):
-    await callback.answer('Выбор случайного фильма')
-    await rq.check_user(callback.from_user.id)
-    waiting_msg = await callback.message.edit_text(f'⏳ Выбираем <b>фильм</b>, это может занять некоторое время ⏳', parse_mode="html")
+@router.message(F.text == 'Фильмы')
+async def movies(message: Message):
+    await rq.check_user(message.from_user.id)
+    waiting_msg = await message.answer('⏳ Выгружаем список <b>фильмов</b>, это может занять некоторое время ⏳', parse_mode="html")
     
     loop = asyncio.get_event_loop()
     task = loop.run_in_executor(executor, mp.random_project)
@@ -127,11 +111,87 @@ async def randomMovie(callback: CallbackQuery):
     while not task.done():
         for text in animation_texts:
             await asyncio.sleep(2)
-            await waiting_msg.edit_text(text, parse_mode='html')
+            await waiting_msg.edit_text(text, parse_mode='html')         
             if task.done():
                 break
     
     await task
+    movie_list = []
+    for movie_with_url in zip(mp.movies, mp.urls_movies):
+        element = f'➜ {str(movie_with_url[0])} - '
+        element += f'https://mustapp.com{str(movie_with_url[1])}'
+        movie_list.append(element)
+    await waiting_msg.edit_text(f'<b>Список запланированных фильмов:\n\n</b>{'\n'.join(movie_list)}', 
+                            reply_markup=kb.movies_menu, parse_mode="html", disable_web_page_preview=True)
+    
+    mp.clear_projects()
+ 
+@router.callback_query(F.data == 'serials')
+async def randomSerial(callback: CallbackQuery):
+    await rq.check_user(callback.from_user.id)
+    await callback.answer('Назад к сериалам')
+    waiting_msg = await callback.message.edit_text('⏳ Выгружаем список <b>сериалов</b>, это может занять некоторое время ⏳', parse_mode="html")
+    
+    loop = asyncio.get_event_loop()
+    task = loop.run_in_executor(executor, mp.random_project)
+
+    while not task.done():
+        for text in animation_texts:
+            await asyncio.sleep(2)
+            await waiting_msg.edit_text(text, parse_mode='html')         
+            if task.done():
+                break
+    
+    await task
+    
+    serials_list = []
+    for serial_with_url in zip(mp.serials, mp.urls):
+        element = f'➜ {str(serial_with_url[0])} - '
+        element += f'https://mustapp.com{str(serial_with_url[1])}'
+        serials_list.append(element)
+    await waiting_msg.edit_text(f'<b>Список запланированных сериалов:\n\n</b>{'\n'.join(serials_list)}', 
+                            reply_markup=kb.serials_menu, parse_mode="html", disable_web_page_preview=True)
+    mp.clear_projects()
+    
+    
+@router.callback_query(F.data == 'movies')
+async def randomSerial(callback: CallbackQuery):
+    await rq.check_user(callback.from_user.id)
+    await callback.answer('Назад к фильмам')
+    waiting_msg = await callback.message.edit_text('⏳ Выгружаем список <b>фильмов</b>, это может занять некоторое время ⏳', parse_mode="html")
+    
+    loop = asyncio.get_event_loop()
+    task = loop.run_in_executor(executor, mp.random_project)
+
+    while not task.done():
+        for text in animation_texts:
+            await asyncio.sleep(2)
+            await waiting_msg.edit_text(text, parse_mode='html')         
+            if task.done():
+                break
+    
+    await task
+    movie_list = []
+    for movie_with_url in zip(mp.movies, mp.urls_movies):
+        element = f'➜ {str(movie_with_url[0])} - '
+        element += f'https://mustapp.com{str(movie_with_url[1])}'
+        movie_list.append(element)
+    await waiting_msg.edit_text(f'<b>Список запланированных фильмов:\n\n</b>{'\n'.join(movie_list)}', 
+                            reply_markup=kb.movies_menu, parse_mode="html", disable_web_page_preview=True)
+    mp.clear_projects()
+    
+    
+@router.callback_query(F.data == 'random_serial')
+async def randomSerial(callback: CallbackQuery):
+    await callback.answer('Выбор случайного сериала')
+    await rq.check_user(callback.from_user.id) 
+    await callback.message.edit_text(f'🎲 Выпал сериал - <b>{mp.chosen_serial}</b>\n Ссылка - {mp.chosen_serial_url}',
+                        reply_markup=kb.random_serial_menu, parse_mode="html")
+
+@router.callback_query(F.data == 'random_movie')
+async def randomMovie(callback: CallbackQuery):
+    await callback.answer('Выбор случайного фильма')
+    await rq.check_user(callback.from_user.id) 
     await callback.message.edit_text(f'🎲 Выпал фильм - <b>{mp.chosen_movie}</b>\n Ссылка - {mp.chosen_movie_url}',
                         reply_markup=kb.random_movies_menu, parse_mode="html")
     

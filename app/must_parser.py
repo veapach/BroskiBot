@@ -9,6 +9,8 @@ serials = []
 movies = []
 urls = []
 urls_movies = []
+serials_with_urls = []
+moves_with_urls = []
 chosen_serial = ''
 chosen_serial_url = ''
 chosen_movie = ''
@@ -45,6 +47,8 @@ def random_project():
             serials.append(name)
             urls.append(url)
     
+
+    
     global chosen_serial
     global chosen_serial_url
     chosen_serial = random.choice(serials)
@@ -57,6 +61,9 @@ def random_project():
     chosen_movie_number = movies.index(chosen_movie)
     chosen_movie_url = 'https://mustapp.com' + urls_movies[chosen_movie_number]
     
+    
+
+def clear_projects():
     movies.clear()
     serials.clear()
     urls.clear()
