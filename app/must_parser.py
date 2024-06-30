@@ -28,7 +28,7 @@ async def must_rating():
     return rating
 
 # Асинхронная функция для получения списка сериалов
-async def get_serials():
+async def get_list():
     async with aiohttp.ClientSession() as session:
         page_content = await fetch_page(session, f'https://mustapp.com/@{must_nickname}/want')
         soup = bs(page_content, 'html.parser')
@@ -39,6 +39,7 @@ async def get_serials():
         pages_content = await asyncio.gather(*tasks)
 
         serials_list = []
+        movies_list = []
         for i, page in enumerate(pages_content):
             show_soup = bs(page, 'html.parser')
             if show_soup.find('div', class_='productShow'):
@@ -47,42 +48,29 @@ async def get_serials():
                 serials_list.append((name, url))
                 serials.append(name)
                 urls.append(url)
-        return serials_list
-
-# Асинхронная функция для получения списка фильмов
-async def get_movies():
-    async with aiohttp.ClientSession() as session:
-        page_content = await fetch_page(session, f'https://mustapp.com/@{must_nickname}/want')
-        soup = bs(page_content, 'html.parser')
-
-        links = soup.find_all('a', class_='poster js_item')
-        tasks = [fetch_page(session, f'https://mustapp.com{link["href"]}') for link in links]
-
-        pages_content = await asyncio.gather(*tasks)
-
-        movies_list = []
-        for i, page in enumerate(pages_content):
-            show_soup = bs(page, 'html.parser')
-            if not show_soup.find('div', class_='productShow'):
+            else:
                 name = soup.find_all('div', class_='poster__title')[i].text.strip()
                 url = links[i]['href']
                 movies_list.append((name, url))
                 movies.append(name)
                 urls_movies.append(url)
-        return movies_list
 
 # Асинхронная функция для получения случайного сериала
 async def get_random_serial():
     if not serials:
-        await get_serials()
+        await get_list()
     chosen_serial = random.choice(serials)
     chosen_serial_url = urls[serials.index(chosen_serial)]
+    serials.clear()
+    urls.clear()
     return chosen_serial, f'https://mustapp.com{chosen_serial_url}'
 
 # Асинхронная функция для получения случайного фильма
 async def get_random_movie():
     if not movies:
-        await get_movies()
+        await get_list()
     chosen_movie = random.choice(movies)
     chosen_movie_url = urls_movies[movies.index(chosen_movie)]
+    movies.clear()
+    urls_movies.clear()
     return chosen_movie, f'https://mustapp.com{chosen_movie_url}'

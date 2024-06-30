@@ -1,8 +1,7 @@
 from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton, 
                            InlineKeyboardMarkup, InlineKeyboardButton)
 
-main = ReplyKeyboardMarkup(keyboard = [[KeyboardButton(text='Сериалы')],
-                                       [KeyboardButton(text='Фильмы')],
+main = ReplyKeyboardMarkup(keyboard = [[KeyboardButton(text='🎲 Рандомайзер')],
                                        [KeyboardButton(text='Профиль')]],
                            resize_keyboard=True,
                            input_field_placeholder='Выбери что показать:')
@@ -15,17 +14,12 @@ confirm_registration = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text = 'Нет ❌', callback_data='confirm_reg_no')]],
                                             one_time_keyboard=True)
 
+randomizer = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text= '🎲 Случайный сериал', callback_data='random_serial')],
+    [InlineKeyboardButton(text= '🎲 Случайный фильм', callback_data='random_movie')]])
+
 profile = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text = 'Перепривязать Must', callback_data='start_registration')]])  
 
-serials_menu = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text = '🎲 Случайный запланированный сериал', callback_data='random_serial')]])
-
-movies_menu = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text = '🎲 Случайный запланированный фильм', callback_data='random_movie')]])
-
-random_serial_menu = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text = 'Назад к сериалам', callback_data='serials')]])
-
-random_movies_menu = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text = 'Назад к фильмам', callback_data='movies')]])
+randomizer_menu = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text = 'Назад к рандомайзеру', callback_data='randomizer')]])

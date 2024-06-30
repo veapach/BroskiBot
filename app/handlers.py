@@ -12,6 +12,7 @@ import app.database.requests as rq
 router = Router()
 
 animation_texts = [
+    '⏳ Выгружаем список запланированного, это может занять некоторое время ⏳',
     '⏳ Еще выгружаем... ⏳',
     '⏳ Осталось чуть-чуть.... ⏳',
     '⏳ Совсем скоро.... ⏳',
@@ -25,6 +26,10 @@ class Register(StatesGroup):
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     await message.answer('Привет, броски! Для начала зарегистрируйся', reply_markup=kb.start_registration)
+    
+@router.message(Command('menu'))
+async def cmd_menu(message: Message):
+    await message.answer('Главное меню', reply_markup=kb.main)
 
 @router.callback_query(F.data == 'start_registration')
 async def start_registration(callback: CallbackQuery, state: FSMContext):
@@ -58,44 +63,38 @@ async def show_profile(message: Message):
     rating = await mp.must_rating()
     await message.answer(f'Ваш профиль:\nMust - https://mustapp.com/@{mp.must_nickname}/\nМесто в рейтинге - {rating}', reply_markup=kb.profile)
 
-@router.message(F.text == 'Сериалы')
-async def serials(message: Message):
+@router.message(F.text == '🎲 Рандомайзер')
+async def randomizer(message: Message):
     await rq.check_user(message.from_user.id)
-    await message.answer('⏳ Выгружаем список <b>сериалов</b>, это может занять некоторое время ⏳', parse_mode="html")
-    global serials_list
-    serials_list = await mp.get_serials()
-    serials_text = '\n'.join([f'➜ {name} - https://mustapp.com{url}' for name, url in serials_list])
-    await message.answer(f'<b>Список запланированных сериалов:\n\n</b>{serials_text}', reply_markup=kb.serials_menu, parse_mode="html", disable_web_page_preview=True)
+    waiting_msg = await message.answer('⏳ Выгружаем список <b>запланированного</b>, это может занять некоторое время ⏳', parse_mode="html")
+    
+    task = asyncio.create_task(mp.get_list())
+    
+    while not task.done():
+        for text in animation_texts:
+            await waiting_msg.edit_text(text, parse_mode="html")
+            await asyncio.sleep(1.5)  
+            if task.done():
+                break
 
-@router.message(F.text == 'Фильмы')
-async def movies(message: Message):
-    await rq.check_user(message.from_user.id)
-    await message.answer('⏳ Выгружаем список <b>фильмов</b>, это может занять некоторое время ⏳', parse_mode="html")
-    global movies_list
-    movies_list = await mp.get_movies()
-    movies_text = '\n'.join([f'➜ {name} - https://mustapp.com{url}' for name, url in movies_list])
-    await message.answer(f'<b>Список запланированных фильмов:\n\n</b>{movies_text}', reply_markup=kb.movies_menu, parse_mode="html", disable_web_page_preview=True)
+    
+    await task
+    await waiting_msg.edit_text('Список запланированного подгружен!\nВыберите что вам показать:', reply_markup=kb.randomizer)
+    
+@router.callback_query(F.data == 'randomizer')
+async def randomizer(callback: CallbackQuery):
+    await callback.answer('Назад к рандомайзеру')
+    await rq.check_user(callback.from_user.id)
+    await callback.message.edit_text('Выберите что вам показать:', reply_markup=kb.randomizer)
 
 @router.callback_query(F.data == 'random_serial')
 async def random_serial(callback: CallbackQuery):
     await rq.check_user(callback.from_user.id)
     serial, url = await mp.get_random_serial()
-    await callback.message.edit_text(f'🎲 Выпал сериал - <b>{serial}</b>\n Ссылка - {url}', reply_markup=kb.random_serial_menu, parse_mode="html")
+    await callback.message.edit_text(f'🎲 Выпал сериал - <b>{serial}</b>\n Ссылка - {url}', reply_markup=kb.randomizer_menu, parse_mode="html")
 
 @router.callback_query(F.data == 'random_movie')
 async def random_movie(callback: CallbackQuery):
     await rq.check_user(callback.from_user.id)
     movie, url = await mp.get_random_movie()
-    await callback.message.edit_text(f'🎲 Выпал фильм - <b>{movie}</b>\n Ссылка - {url}', reply_markup=kb.random_movies_menu, parse_mode="html")
-
-@router.callback_query(F.data == 'serials')
-async def serials_menu(callback: CallbackQuery):
-    await callback.answer('Назад к сериалам')
-    serials_text = '\n'.join([f'➜ {name} - https://mustapp.com{url}' for name, url in serials_list])
-    await callback.message.answer(f'<b>Список запланированных сериалов:\n\n</b>{serials_text}', reply_markup=kb.serials_menu, parse_mode="html", disable_web_page_preview=True)
-
-@router.callback_query(F.data == 'movies')
-async def movies_menu(callback: CallbackQuery):
-    await callback.answer('Назад к фильмам')
-    movies_text = '\n'.join([f'➜ {name} - https://mustapp.com{url}' for name, url in movies_list])
-    await callback.message.answer(f'<b>Список запланированных фильмов:\n\n</b>{movies_text}', reply_markup=kb.movies_menu, parse_mode="html", disable_web_page_preview=True)
+    await callback.message.edit_text(f'🎲 Выпал фильм - <b>{movie}</b>\n Ссылка - {url}', reply_markup=kb.randomizer_menu, parse_mode="html")
