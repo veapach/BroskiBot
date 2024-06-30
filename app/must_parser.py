@@ -63,14 +63,22 @@ async def get_list():
 async def get_random_serial():
     if not serials:
         await get_list()
-    chosen_serial = random.choice(serials)
-    chosen_serial_url = urls[serials.index(chosen_serial)]    
-    return chosen_serial, f'https://mustapp.com{chosen_serial_url}'
+        if not serials:
+            return 'Список запланированных сериалов пуст🤷‍♂️', ''
+        else:
+            chosen_serial = random.choice(serials)
+            chosen_serial_url = urls[serials.index(chosen_serial)]    
+            return chosen_serial, f'https://mustapp.com{chosen_serial_url}'
+    
 
 # Асинхронная функция для получения случайного фильма
 async def get_random_movie():
     if not movies:
         await get_list()
-    chosen_movie = random.choice(movies)
-    chosen_movie_url = urls_movies[movies.index(chosen_movie)]
-    return chosen_movie, f'https://mustapp.com{chosen_movie_url}'
+        if not serials:
+            return 'Список запланированных фильмов пуст 🤷‍♂️', ''
+        else:
+            chosen_movie = random.choice(movies)
+            chosen_movie_url = urls_movies[movies.index(chosen_movie)]
+            return chosen_movie, f'https://mustapp.com{chosen_movie_url}'
+    

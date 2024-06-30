@@ -91,10 +91,16 @@ async def randomizer(callback: CallbackQuery):
 async def random_serial(callback: CallbackQuery):
     await rq.check_user(callback.from_user.id)
     serial, url = await mp.get_random_serial()
-    await callback.message.edit_text(f'🎲 Выпал сериал - <b>{serial}</b>\n Ссылка - {url}', reply_markup=kb.randomizer_menu, parse_mode="html")
+    if not url:
+        await callback.message.edit_text(f'{serial} {url}', reply_markup=kb.randomizer_menu, parse_mode="html")
+    else:
+        await callback.message.edit_text(f'🎲 Выпал сериал - <b>{serial}</b>\n Ссылка - {url}', reply_markup=kb.randomizer_menu, parse_mode="html")
 
 @router.callback_query(F.data == 'random_movie')
 async def random_movie(callback: CallbackQuery):
     await rq.check_user(callback.from_user.id)
     movie, url = await mp.get_random_movie()
-    await callback.message.edit_text(f'🎲 Выпал фильм - <b>{movie}</b>\n Ссылка - {url}', reply_markup=kb.randomizer_menu, parse_mode="html")
+    if not url:
+        await callback.message.edit_text(f'{movie} {url}', reply_markup=kb.randomizer_menu, parse_mode="html")
+    else:
+        await callback.message.edit_text(f'🎲 Выпал фильм - <b>{movie}</b>\n Ссылка - {url}', reply_markup=kb.randomizer_menu, parse_mode="html")
