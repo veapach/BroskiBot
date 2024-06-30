@@ -29,6 +29,10 @@ async def must_rating():
 
 # Асинхронная функция для получения списка сериалов
 async def get_list():
+    serials.clear()
+    movies.clear()
+    urls.clear()
+    urls_movies.clear()
     async with aiohttp.ClientSession() as session:
         page_content = await fetch_page(session, f'https://mustapp.com/@{must_nickname}/want')
         soup = bs(page_content, 'html.parser')
@@ -60,9 +64,7 @@ async def get_random_serial():
     if not serials:
         await get_list()
     chosen_serial = random.choice(serials)
-    chosen_serial_url = urls[serials.index(chosen_serial)]
-    serials.clear()
-    urls.clear()
+    chosen_serial_url = urls[serials.index(chosen_serial)]    
     return chosen_serial, f'https://mustapp.com{chosen_serial_url}'
 
 # Асинхронная функция для получения случайного фильма
@@ -71,6 +73,4 @@ async def get_random_movie():
         await get_list()
     chosen_movie = random.choice(movies)
     chosen_movie_url = urls_movies[movies.index(chosen_movie)]
-    movies.clear()
-    urls_movies.clear()
     return chosen_movie, f'https://mustapp.com{chosen_movie_url}'
