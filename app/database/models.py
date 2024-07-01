@@ -20,30 +20,6 @@ class User(Base):
     tg_id = mapped_column(BigInteger)
     must_id = mapped_column(String(50))
     
-class Category(Base):
-    __tablename__ = 'categories'
-    
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(25))
-    
-class Serial(Base):
-    __tablename__ = 'serials'
-    
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(25))
-    description: Mapped[str] = mapped_column(String(120))
-    numberOfEpisodes: Mapped[int] = mapped_column()
-    category: Mapped[int] = mapped_column(ForeignKey('categories.id'))
-
-class Movie(Base):
-    __tablename__ = 'movies'
-    
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(25))
-    description: Mapped[str] = mapped_column(String(120))
-    numberOfEpisodes: Mapped[int] = mapped_column()
-    category: Mapped[int] = mapped_column(ForeignKey('categories.id'))
-    
 
 async def async_main():
     async with engine.begin() as conn:
