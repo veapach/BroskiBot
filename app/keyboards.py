@@ -2,7 +2,8 @@ from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton,
                            InlineKeyboardMarkup, InlineKeyboardButton)
 
 main = ReplyKeyboardMarkup(keyboard = [[KeyboardButton(text='🎲 Рандомайзер')],
-                                       [KeyboardButton(text='Профиль')]],
+                                       [KeyboardButton(text='Профиль')],
+                                       [KeyboardButton(text='Загрузить список запланированного')]],
                            resize_keyboard=True,
                            input_field_placeholder='Выбери что показать:')
 
