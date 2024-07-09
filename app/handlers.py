@@ -44,6 +44,7 @@ async def registration_must(message: Message, state: FSMContext):
 
 @router.callback_query(F.data == 'confirm_reg_yes')
 async def confirm_reg(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
     data = await state.get_data()
     await rq.set_user(callback.from_user.id, data['must_nickname'])
     await state.clear()
@@ -77,25 +78,26 @@ async def randomizer(message: Message):
             if task.done():
                 break
 
-    success, error = await task
-    if not success:
-        await waiting_msg.delete()
-        await message.answer('Не удалось загрузить список, ошибка со стороны Must. Попробуйте еще раз!', reply_markup=kb.main)
-        return
-
+    await task
     await waiting_msg.delete()
     await message.answer('Список запланированного подгружен!\nВыберите что вам показать:', reply_markup=kb.randomizer)
     
 @router.message(F.text == '🎲 Рандомайзер')
 async def randomizer(message: Message):
     await rq.check_user(message.from_user.id)
-    await message.answer('Выберите что вам показать:', reply_markup=kb.randomizer)
+    if not mp.serials or mp.movies:
+        await message.answer('Список запланированного пуст🤷‍♂️\nЕсли у вас в Must все-таки есть список запланированного, нажмите на "Загрузить список запланированного" в меню или перепривязать Must в разделе "Профиль"')
+    else:
+        await message.answer('Выберите что вам показать:', reply_markup=kb.randomizer)
     
 @router.callback_query(F.data == 'randomizer')
 async def randomizer(callback: CallbackQuery):
     await callback.answer('Назад к рандомайзеру')
     await rq.check_user(callback.from_user.id)
-    await callback.message.edit_text('Выберите что вам показать:', reply_markup=kb.randomizer)
+    if not mp.serials or mp.movies:
+        await callback.message.answer('Список запланированного пуст🤷‍♂️\nЕсли у вас в Must все-таки есть список запланированного, нажмите на "Загрузить список запланированного" в меню или перепривязать Must в разделе "Профиль"')
+    else:
+        await callback.message.answer('Выберите что вам показать:', reply_markup=kb.randomizer)
 
 @router.callback_query(F.data == 'random_serial')
 async def random_serial(callback: CallbackQuery):
